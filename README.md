@@ -4,6 +4,19 @@
 
 This Android application allows users to search for a GitHub user by their username, display the user's profile information, and list the public repositories owned by the user. The app also allows navigation to a detailed view of each repository, showing additional information such as the number of forks. If the total forks exceed 5000, a special badge is displayed.
 
+<table>
+  <tr>
+    <td><img src="https://github.com/user-attachments/assets/96644410-2efd-4d65-b968-991a8cc2a409" width="500"/></td>
+    <td><img src="https://github.com/user-attachments/assets/1039fbca-5535-46e6-b6b3-3e578b4101d6" width="500"/></td>
+  </tr>
+  <tr>
+    <td><img src="https://github.com/user-attachments/assets/08eff3b7-7d7a-47ef-b859-9c9bf94226ff" width="500"/></td>
+    <td><img src="https://github.com/user-attachments/assets/0f8baa38-9a2a-4a01-a7a8-4709c1d88c40" width="500"/></td>
+  </tr>
+</table>
+
+
+
 ## Features
 
 - Search GitHub users by username.
