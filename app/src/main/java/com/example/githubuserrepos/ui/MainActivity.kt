@@ -1,47 +1,33 @@
-package com.example.githubuserrepos
+package com.example.githubuserrepos.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.githubuserrepos.theme.GitHubUserReposTheme
+import androidx.lifecycle.ViewModelProvider
+import com.example.githubuserrepos.network.RetrofitInstance
+import com.example.githubuserrepos.network.UserRepository
+import com.example.githubuserrepos.viewmodel.MainViewModel
+import com.example.githubuserrepos.viewmodel.MainViewModelFactory
 
+// MainActivity that sets up the UI content using Jetpack Compose
 class MainActivity : ComponentActivity() {
+
+    // ViewModel for the MainActivity, now created using a custom factory
+    private lateinit var viewModel: MainViewModel
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+
+        // Create an instance of UserRepository
+        val repository = UserRepository(RetrofitInstance.api)
+
+        // Create an instance of MainViewModel using the custom factory
+        val factory = MainViewModelFactory(repository)
+        viewModel = ViewModelProvider(this, factory).get(MainViewModel::class.java)
+
         setContent {
-            GitHubUserReposTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
+            // Setting the content of the activity with the MainScreen composable function
+            MainScreen(viewModel = viewModel)
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    GitHubUserReposTheme {
-        Greeting("Android")
     }
 }
