@@ -38,8 +38,8 @@ class MainViewModelTest {
         // Arrange
         val mockUser = User(name = "Test User", avatar_url = "http://example.com/avatar.png")
         val mockRepos = listOf(
-            Repository(name = "Repo1", description = "Description1", forks = 10),
-            Repository(name = "Repo2", description = "Description2", forks = 20)
+            Repository(name = "Repo1", description = "Description1", "", 0, forks = 10),
+            Repository(name = "Repo2", description = "Description2", "", 0, forks = 20)
         )
 
         Mockito.`when`(repository.getUser("testuser")).thenReturn(mockUser)
@@ -51,5 +51,24 @@ class MainViewModelTest {
         // Assert
         assertEquals(mockUser, viewModel.user.first())
         assertEquals(mockRepos, viewModel.repos.first())
+
+        // Test the total forks calculation
+        val expectedTotalForks = 30
+        assertEquals(expectedTotalForks, viewModel.totalForks.first())
+    }
+
+    @Test
+    fun fetchUserData_failure() = runBlocking {
+        // Arrange
+        val exception = Exception("User not found")
+        Mockito.`when`(repository.getUser("nonexistentuser")).thenThrow(exception)
+
+        // Act
+        viewModel.fetchUserData("nonexistentuser")
+
+        // Assert
+        assertEquals(null, viewModel.user.first())
+        assertEquals(emptyList<Repository>(), viewModel.repos.first())
+        assertEquals("Error fetching data", viewModel.errorMessage.first())
     }
 }

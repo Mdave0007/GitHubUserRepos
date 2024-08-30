@@ -1,36 +1,39 @@
 package com.example.githubuserrepos.ui
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import coil.compose.rememberImagePainter
-import com.example.githubuserrepos.R
 import com.example.githubuserrepos.model.Repository
 import com.example.githubuserrepos.viewmodel.MainViewModel
+import kotlinx.coroutines.delay
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
-fun MainScreen(viewModel: MainViewModel) {
-    // State to hold the GitHub user ID input by the user
+fun MainScreen(viewModel: MainViewModel, navController: NavController) {
     var userId by remember { mutableStateOf(TextFieldValue()) }
+    var searchPerformed by remember { mutableStateOf(false) }
+    var showRepositories by remember { mutableStateOf(false) }
 
-    // Observe the user data and repository list from the ViewModel
     val user by viewModel.user.collectAsState()
     val repos by viewModel.repos.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
+    val totalForks by viewModel.totalForks.collectAsState(initial = 0)
 
     Scaffold(
         topBar = {
@@ -46,50 +49,75 @@ fun MainScreen(viewModel: MainViewModel) {
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            // TextField for entering the GitHub user ID
-            TextField(
-                value = userId,
-                onValueChange = { userId = it },
-                label = { Text("Enter a github user id") },
-                modifier = Modifier
-                    .fillMaxWidth(),
-                colors = TextFieldDefaults.textFieldColors(
-                    backgroundColor = Color.Transparent
-                )
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Button to initiate the search based on the entered user ID
-            Button(
-                onClick = { viewModel.fetchUserData(userId.text) },
-                modifier = Modifier.align(Alignment.End)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("SEARCH")
+                TextField(
+                    value = userId,
+                    onValueChange = { userId = it },
+                    label = { Text("Enter a GitHub user id") },
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp),
+                    colors = TextFieldDefaults.textFieldColors(
+                        backgroundColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Red,
+                        unfocusedIndicatorColor = Color.Gray,
+                        cursorColor = Color.Red,
+                        focusedLabelColor = Color.Red,
+                        unfocusedLabelColor = Color.Gray
+                    )
+                )
+
+                Button(
+                    onClick = {
+                        viewModel.fetchUserData(userId.text)
+                        searchPerformed = true
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = Color.LightGray,
+                        contentColor = Color.Black
+                    )
+                ) {
+                    Text("SEARCH")
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Display the user's avatar and name if available
-            user?.let {
-                Image(
-                    painter = rememberImagePainter(data = it.avatar_url),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(100.dp)
-                        .align(Alignment.CenterHorizontally),
-                    contentScale = ContentScale.Crop
-                )
-                Text(
-                    text = it.name,
-                    style = MaterialTheme.typography.h6,
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(top = 8.dp)
-                )
+            AnimatedVisibility(
+                visible = searchPerformed && user != null,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Image(
+                        painter = rememberImagePainter(data = user?.avatar_url),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(100.dp)
+                            .align(Alignment.CenterHorizontally),
+                        contentScale = ContentScale.Crop
+                    )
+                    Text(
+                        text = user?.name ?: "",
+                        style = MaterialTheme.typography.h6,
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(top = 8.dp)
+                    )
+
+                    LaunchedEffect(key1 = searchPerformed) {
+                        delay(500)
+                        showRepositories = true
+                    }
+                }
             }
 
-            // Display an error message if there is one
             errorMessage?.let {
                 Text(
                     text = it,
@@ -99,10 +127,19 @@ fun MainScreen(viewModel: MainViewModel) {
                 )
             }
 
-            // LazyColumn to display the list of repositories
-            LazyColumn(modifier = Modifier.padding(top = 16.dp)) {
-                items(repos) { repo ->
-                    RepositoryItem(repo = repo)
+            AnimatedVisibility(
+                visible = showRepositories && repos.isNotEmpty(),
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                LazyColumn(modifier = Modifier.padding(top = 16.dp)) {
+                    items(repos) { repo ->
+                        RepositoryItem(repo = repo) {
+                            navController.navigate(
+                                "detail_screen/${repo.name}/${repo.description ?: "No description"}/${repo.forks}/$totalForks"
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -110,11 +147,12 @@ fun MainScreen(viewModel: MainViewModel) {
 }
 
 @Composable
-fun RepositoryItem(repo: Repository) {
+fun RepositoryItem(repo: Repository, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 4.dp)
+            .clickable(onClick = onClick),
         elevation = 4.dp
     ) {
         Column(
