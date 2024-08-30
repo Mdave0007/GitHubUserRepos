@@ -20,8 +20,15 @@ class MainViewModel(private val repository: UserRepository) : ViewModel() {
     private val _repos = MutableStateFlow<List<Repository>>(emptyList())
     val repos: StateFlow<List<Repository>> = _repos
 
+    // StateFlow to hold any error messages for display in the UI
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage
+
     // Function to fetch user and repository data based on the provided GitHub user ID
     fun fetchUserData(userId: String) {
+        // Resetting the error message at the start of the operation
+        _errorMessage.value = null
+
         // Launching a coroutine in viewModelScope for performing asynchronous operations
         viewModelScope.launch {
             try {
@@ -35,8 +42,8 @@ class MainViewModel(private val repository: UserRepository) : ViewModel() {
                 _user.value = userData
                 _repos.value = reposData
             } catch (e: Exception) {
-                // Handle exceptions (e.g., network errors)
-                // Consider adding error handling code here to update the UI accordingly
+                // If any exception occurs, set the error message for the UI to display
+                _errorMessage.value = "Failed to fetch data: ${e.message}"
             }
         }
     }
